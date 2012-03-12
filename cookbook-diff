@@ -1,19 +1,41 @@
 #!/bin/sh
 
-#input 1 - cookbook a
-a=$1
-b=$2
+# make sure we have exactly 2 cookbooks to compare
+if [ $# != 2 ]; then
+    echo "usage: cookbook-diff <cookbook1> <cookbook2>"
+    exit 1
+fi
 
-echo $a
+# define the two cookbooks
+a=$1; b=$2
+echo "* Comparing $a with $b"
 
-echo $b
+# are there any differences? If not, exit, if so, how many, and continue.
+DIFF_SUM=`diff -rq $a $b | wc -l`
+if [ $DIFF_SUM != 0 ]; then
+	echo "* There are $DIFF_SUM differences between the two cookbooks, continuing..."
+else
+	echo "* There are no differences, exiting"
+	exit 0
+fi
 
-
-#get version numbers of cookbooks
-
-
+# show version numbers for each
+echo "* Cookbook versions..."
 version_a=`grep "version" $a/metadata.rb`
 version_b=`grep "version" $b/metadata.rb`
+echo "	$a: $version_a"
+echo "	$b: $version_b"
+
+# display the differences in detail (loop through differently for formatting?)
+DIFF_DETAILS=`diff -ry $a $b > /tmp/cookbook-diff.out`
+echo "* Specific differences, by file..."
+cat /tmp/cookbook-diff.out
+
+echo "* Detailed output saved to /tmp/cookbook-diff.out"
+
+exit 0
+
+
 
 if [ "$version_a" != "$version_b" ]
   then
@@ -24,17 +46,15 @@ else
   echo "Version matches: $version_a"
 fi
 
-
-
-#print differences
-
+#get version numbers of cookbooks
+version_a=`grep "version" $a/metadata.rb`
+version_b=`grep "version" $b/metadata.rb`
 
 #get list of files in cookbook a and b
 #print differences
 
 find_a=`cd $a && find .`
 find_b=`cd $b && find .`
-
 
 if [ "$find_a" != "$find_b" ]
   then
@@ -43,15 +63,14 @@ else
   echo "Directory contents match"
 fi
 
-
-
 #foreach file in cookbook_a
 # get filename
 for f in $find_a; do
   echo
-  echo "checking $a/$f against $b/$f"
+  #echo "checking $a/$f against $b/$f"
   echo
-  diff -y --suppress-common-lines $a/$f $b/$f
+  #diff -y --suppress-common-lines $a/$f $b/$f
+  diff -rqy --suppress-common-lines $a/$f $b/$f
 done
 #compare it to the same filename in cookbook_b
 
